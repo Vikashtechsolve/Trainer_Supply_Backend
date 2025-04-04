@@ -7,7 +7,7 @@ export interface ITrainer extends Document {
   email: string;
   phoneNo: string;
   qualification: string;
-  passingYear: number;
+  passingYear: number | number;
   expertise: string;
   teachingExperience: number;
   developmentExperience: number;
@@ -16,7 +16,7 @@ export interface ITrainer extends Document {
   payoutExpectation: number;
   location: string;
   remarks?: string;
-  resume: File | string;
+  resume: string | null;
   status: "active" | "inactive";
   createdAt: Date;
   updatedAt: Date;
@@ -24,7 +24,8 @@ export interface ITrainer extends Document {
   bio?: string;
   hourlyRate?: number;
   availability?: string;
-  documents?: File;
+  documents?: string[];
+  interview?: "not taken" | "taken";
 }
 
 const trainerSchema = new Schema<ITrainer>(
@@ -57,7 +58,7 @@ const trainerSchema = new Schema<ITrainer>(
       trim: true,
     },
     passingYear: {
-      type: Number,
+      type: Schema.Types.Mixed,
       required: true,
       min: 1900,
       max: new Date().getFullYear(),
@@ -111,6 +112,35 @@ const trainerSchema = new Schema<ITrainer>(
       type: String,
       enum: ["active", "inactive"],
       default: "active",
+    },
+    documents: {
+      type: [String], // Array of document URLs
+      required: false,
+    },
+    skills: {
+      type: [String],
+      required: false,
+    },
+    bio: {
+      type: String,
+      required: false,
+      trim: true,
+      maxlength: 1000,
+    },
+    hourlyRate: {
+      type: Number,
+      required: false,
+      min: 0,
+    },
+    availability: {
+      type: [{ day: String, slots: [String] }],
+      required: false,
+      trim: true,
+    },
+    interview: {
+      type: String,
+      enum: ["Taken", "Not taken"],
+      default: "Not taken",
     },
   },
   {

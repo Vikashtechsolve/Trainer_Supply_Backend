@@ -161,7 +161,7 @@ export const createTrainer = async (req: Request, res: Response) => {
       email: req.body.email.toLowerCase(),
       phoneNo: req.body.phoneNo,
       qualification: req.body.qualification,
-      passingYear,
+      passingYear: req.body.passingYear,
       expertise: req.body.expertise,
       teachingExperience,
       developmentExperience,
@@ -170,8 +170,9 @@ export const createTrainer = async (req: Request, res: Response) => {
       payoutExpectation,
       location: req.body.location,
       remarks: req.body.remarks,
-      resume: resumePath,
+      resume: req.file ? req.file.filename : null,
       status: "active",
+      interview: req.body.interview || "Not taken",
     };
 
     console.log("Creating trainer with data:", trainerData);
@@ -238,6 +239,29 @@ export const updateTrainer = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Update trainer error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//update interview status
+export const updateInterviewStatus = async (req: Request, res: Response) => {
+  try {
+    const { interview } = req.body;
+    const trainer = await Trainer.findById(req.params.id);
+
+    if (!trainer) {
+      return res.status(404).json({ message: "Trainer not found" });
+    }
+
+    trainer.interview = interview;
+    await trainer.save();
+
+    res.json({
+      message: "Interview status updated successfully",
+      interview: trainer.interview,
+    });
+  } catch (error) {
+    console.error("Update interview status error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

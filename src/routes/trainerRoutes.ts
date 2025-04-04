@@ -10,6 +10,7 @@ import {
   deleteTrainer,
   updateAvailability,
   updateDocuments,
+  updateInterviewStatus,
 } from "../controllers/trainerController";
 import { auth, authorize } from "../middleware/auth";
 
@@ -18,7 +19,7 @@ const router = express.Router();
 // Configure multer for file upload
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, "../../uploads"));
+    cb(null, path.join(__dirname, "../../public/uploads"));
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -96,8 +97,27 @@ const documentsValidation = [
 router.get("/", getAllTrainers);
 router.get("/:id", getTrainer);
 
+//Interview route
+router.put(
+  "/:id/interview",
+  auth,
+  authorize("admin"),
+  body("interview").isIn(["Taken", "Not taken"]),
+  updateInterviewStatus
+);
+
 // Create trainer route without authentication
-router.post("/", upload.single("resume"), trainerValidation, createTrainer);
+router.post("/", upload.single("resume"), async (req, res, next) => {
+  try {
+    await createTrainer(req, res);
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ message: error.message });
+    } else {
+      res.status(400).json({ message: "An unknown error occurred" });
+    }
+  }
+});
 
 // Protected routes (require authentication)
 router.put(
@@ -118,7 +138,7 @@ router.put(
   "/:id/documents",
   auth,
   authorize("admin", "trainer"),
-  upload.single("document"),
+  upload.array("document", 5),
   updateDocuments
 );
 
