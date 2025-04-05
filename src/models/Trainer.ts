@@ -17,7 +17,7 @@ export interface ITrainer extends Document {
   location: string;
   remarks?: string;
   resume: string | null;
-  status: "active" | "inactive";
+  status: "Selected" | "Rejected" | "Pending";
   createdAt: Date;
   updatedAt: Date;
   skills?: string[];
@@ -110,8 +110,8 @@ const trainerSchema = new Schema<ITrainer>(
     },
     status: {
       type: String,
-      enum: ["active", "inactive"],
-      default: "active",
+      enum: ["Selected", "Rejected", "Pending"],
+      default: "Pending",
     },
     documents: {
       type: [String], // Array of document URLs

@@ -328,3 +328,39 @@ export const updateDocuments = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// Update trainer status
+export const updateTrainerStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!["Selected", "Rejected", "Pending"].includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status. Must be one of: Selected, Rejected, Pending",
+      });
+    }
+
+    const trainer = await Trainer.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true, runValidators: true }
+    );
+
+    if (!trainer) {
+      return res.status(404).json({
+        message: "Trainer not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Trainer status updated successfully",
+      trainer,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error updating trainer status",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};

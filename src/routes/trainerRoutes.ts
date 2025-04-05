@@ -11,6 +11,7 @@ import {
   updateAvailability,
   updateDocuments,
   updateInterviewStatus,
+  updateTrainerStatus,
 } from "../controllers/trainerController";
 import { auth, authorize } from "../middleware/auth";
 
@@ -140,6 +141,17 @@ router.put(
   authorize("admin", "trainer"),
   upload.array("document", 5),
   updateDocuments
+);
+
+// Update trainer status route
+router.patch(
+  "/:id/status",
+  auth,
+  authorize("admin"),
+  body("status")
+    .isIn(["Selected", "Rejected", "Pending"])
+    .withMessage("Invalid status"),
+  updateTrainerStatus
 );
 
 export default router;
