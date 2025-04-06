@@ -1,20 +1,20 @@
-import { Request, Response } from 'express';
-import { Course } from '../models/Course';
-import { Trainer } from '../models/Trainer';
-import { validationResult } from 'express-validator';
+import { Request, Response } from "express";
+import { Course } from "../models/Course";
+import { Trainer } from "../models/Trainer";
+import { validationResult } from "express-validator";
 
 // Get all courses
 export const getAllCourses = async (req: Request, res: Response) => {
   try {
     const courses = await Course.find()
-      .populate('trainerId', 'userId skills experience')
-      .populate('trainerId.userId', 'firstName lastName email')
-      .select('-__v');
-    
+      .populate("trainerId", "userId skills experience")
+      .populate("trainerId.userId", "firstName lastName email")
+      .select("-__v");
+
     res.json(courses);
   } catch (error) {
-    console.error('Get courses error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Get courses error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -22,18 +22,18 @@ export const getAllCourses = async (req: Request, res: Response) => {
 export const getCourse = async (req: Request, res: Response) => {
   try {
     const course = await Course.findById(req.params.id)
-      .populate('trainerId', 'userId skills experience')
-      .populate('trainerId.userId', 'firstName lastName email')
-      .select('-__v');
+      .populate("trainerId", "userId skills experience")
+      .populate("trainerId.userId", "firstName lastName email")
+      .select("-__v");
 
     if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
+      return res.status(404).json({ message: "Course not found" });
     }
 
     res.json(course);
   } catch (error) {
-    console.error('Get course error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Get course error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -55,13 +55,13 @@ export const createCourse = async (req: Request, res: Response) => {
       materials,
       category,
       prerequisites,
-      objectives
+      objectives,
     } = req.body;
 
     // Check if trainer exists
     const trainer = await Trainer.findById(trainerId);
     if (!trainer) {
-      return res.status(404).json({ message: 'Trainer not found' });
+      return res.status(404).json({ message: "Trainer not found" });
     }
 
     const course = new Course({
@@ -74,15 +74,15 @@ export const createCourse = async (req: Request, res: Response) => {
       materials,
       category,
       prerequisites,
-      objectives
+      objectives,
     });
 
     await course.save();
 
     res.status(201).json(course);
   } catch (error) {
-    console.error('Create course error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Create course error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -104,12 +104,12 @@ export const updateCourse = async (req: Request, res: Response) => {
       status,
       category,
       prerequisites,
-      objectives
+      objectives,
     } = req.body;
 
     const course = await Course.findById(req.params.id);
     if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
+      return res.status(404).json({ message: "Course not found" });
     }
 
     // Update fields
@@ -127,12 +127,12 @@ export const updateCourse = async (req: Request, res: Response) => {
     await course.save();
 
     res.json({
-      message: 'Course updated successfully',
-      course
+      message: "Course updated successfully",
+      course,
     });
   } catch (error) {
-    console.error('Update course error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Update course error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -141,15 +141,15 @@ export const deleteCourse = async (req: Request, res: Response) => {
   try {
     const course = await Course.findById(req.params.id);
     if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
+      return res.status(404).json({ message: "Course not found" });
     }
 
-    await course.remove();
+    await course.deleteOne();
 
-    res.json({ message: 'Course deleted successfully' });
+    res.json({ message: "Course deleted successfully" });
   } catch (error) {
-    console.error('Delete course error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Delete course error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -160,19 +160,19 @@ export const updateMaterials = async (req: Request, res: Response) => {
     const course = await Course.findById(req.params.id);
 
     if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
+      return res.status(404).json({ message: "Course not found" });
     }
 
     course.materials = materials;
     await course.save();
 
     res.json({
-      message: 'Materials updated successfully',
-      materials: course.materials
+      message: "Materials updated successfully",
+      materials: course.materials,
     });
   } catch (error) {
-    console.error('Update materials error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Update materials error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -183,18 +183,18 @@ export const updateSchedule = async (req: Request, res: Response) => {
     const course = await Course.findById(req.params.id);
 
     if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
+      return res.status(404).json({ message: "Course not found" });
     }
 
     course.schedule = schedule;
     await course.save();
 
     res.json({
-      message: 'Schedule updated successfully',
-      schedule: course.schedule
+      message: "Schedule updated successfully",
+      schedule: course.schedule,
     });
   } catch (error) {
-    console.error('Update schedule error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Update schedule error:", error);
+    res.status(500).json({ message: "Server error" });
   }
-}; 
+};

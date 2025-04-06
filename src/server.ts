@@ -13,6 +13,7 @@ import fs from "fs";
 import authRoutes from "./routes/authRoutes";
 import trainerRoutes from "./routes/trainerRoutes";
 import courseRoutes from "./routes/courseRoutes";
+import vendorRoutes from "./routes/vendorRoutes";
 
 // Load environment variables
 dotenv.config();
@@ -71,6 +72,7 @@ io.on("connection", (socket) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/trainers", trainerRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api/vendors", vendorRoutes);
 
 // Base route
 app.get("/", (req, res) => {
