@@ -6,6 +6,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import bcrypt from "bcrypt";
+import { logger } from "../utils/logger";
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
@@ -45,8 +46,8 @@ export const getAllTrainers = async (req: Request, res: Response) => {
 
     res.json(trainers);
   } catch (error) {
-    console.error("Get trainers error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Get trainers error:", error);
+    res.status(500).json({ message: "Error getting trainers" });
   }
 };
 
@@ -63,30 +64,41 @@ export const getTrainer = async (req: Request, res: Response) => {
 
     res.json(trainer);
   } catch (error) {
-    console.error("Get trainer error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Get trainer error:", error);
+    res.status(500).json({ message: "Error getting trainer" });
   }
 };
 
 // Create trainer
 export const createTrainer = async (req: Request, res: Response) => {
   try {
-    console.log("Received request body:", req.body);
-    console.log("Received file:", req.file);
-
     // Validate request data
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log("Validation errors:", errors.array());
-      return res.status(400).json({
-        message: "Validation failed",
-        errors: errors.array(),
-      });
+      logger.log("Validation errors during trainer creation");
+      return res.status(400).json({ errors: errors.array() });
     }
+
+    // Extract trainer data from request body
+    const {
+      name,
+      email,
+      phoneNo,
+      qualification,
+      passingYear,
+      expertise,
+      teachingExperience,
+      developmentExperience,
+      totalExperience,
+      feasibleTime,
+      payoutExpectation,
+      location,
+      remarks,
+    } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({
-      email: req.body.email.toLowerCase(),
+      email: email.toLowerCase(),
     });
     if (existingUser) {
       return res.status(400).json({
@@ -97,7 +109,7 @@ export const createTrainer = async (req: Request, res: Response) => {
 
     // Check if trainer already exists
     const existingTrainer = await Trainer.findOne({
-      email: req.body.email.toLowerCase(),
+      email: email.toLowerCase(),
     });
     if (existingTrainer) {
       return res.status(400).json({
@@ -107,7 +119,7 @@ export const createTrainer = async (req: Request, res: Response) => {
     }
 
     // Split name into firstName and lastName
-    const nameParts = req.body.name.split(" ");
+    const nameParts = name.split(" ");
     const firstName = nameParts[0];
     const lastName = nameParts.slice(1).join(" ") || firstName;
 
@@ -118,67 +130,58 @@ export const createTrainer = async (req: Request, res: Response) => {
     const user = await User.create({
       firstName,
       lastName,
-      email: req.body.email.toLowerCase(),
+      email: email.toLowerCase(),
       password: hashedPassword,
       role: "trainer",
     });
-
-    console.log("Created user:", user);
 
     // Handle file upload
     let resumePath = "";
     if (req.file) {
       resumePath = req.file.filename;
-      console.log("Resume path:", resumePath);
     }
 
     // Parse and validate numeric fields
-    const passingYear = Math.max(
+    const passingYearParsed = Math.max(
       1900,
-      Math.min(new Date().getFullYear(), parseInt(req.body.passingYear) || 0)
+      Math.min(new Date().getFullYear(), parseInt(passingYear) || 0)
     );
-    const teachingExperience = Math.max(
+    const teachingExperienceParsed = Math.max(
       0,
-      parseInt(req.body.teachingExperience) || 0
+      parseInt(teachingExperience) || 0
     );
-    const developmentExperience = Math.max(
+    const developmentExperienceParsed = Math.max(
       0,
-      parseInt(req.body.developmentExperience) || 0
+      parseInt(developmentExperience) || 0
     );
-    const totalExperience = Math.max(
+    const totalExperienceParsed = Math.max(0, parseInt(totalExperience) || 0);
+    const payoutExpectationParsed = Math.max(
       0,
-      parseInt(req.body.totalExperience) || 0
-    );
-    const payoutExpectation = Math.max(
-      0,
-      parseInt(req.body.payoutExpectation) || 0
+      parseInt(payoutExpectation) || 0
     );
 
     // Create trainer profile
     const trainerData = {
       userId: user._id,
-      name: req.body.name,
-      email: req.body.email.toLowerCase(),
-      phoneNo: req.body.phoneNo,
-      qualification: req.body.qualification,
-      passingYear: req.body.passingYear,
-      expertise: req.body.expertise,
-      teachingExperience,
-      developmentExperience,
-      totalExperience,
-      feasibleTime: req.body.feasibleTime,
-      payoutExpectation,
-      location: req.body.location,
-      remarks: req.body.remarks,
-      resume: req.file ? req.file.filename : null,
+      name,
+      email: email.toLowerCase(),
+      phoneNo,
+      qualification,
+      passingYear: passingYearParsed,
+      expertise,
+      teachingExperience: teachingExperienceParsed,
+      developmentExperience: developmentExperienceParsed,
+      totalExperience: totalExperienceParsed,
+      feasibleTime,
+      payoutExpectation: payoutExpectationParsed,
+      location,
+      remarks,
+      resume: resumePath,
       status: "active",
       interview: req.body.interview || "Not taken",
     };
 
-    console.log("Creating trainer with data:", trainerData);
-
     const trainer = await Trainer.create(trainerData);
-    console.log("Created trainer:", trainer);
 
     res.status(201).json({
       message: "Trainer created successfully",
@@ -189,19 +192,22 @@ export const createTrainer = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("Error in createTrainer:", error);
-    console.error("Error stack:", error.stack);
+    logger.error("Error in createTrainer:", error);
+    logger.error(
+      "Error stack:",
+      error instanceof Error ? error.stack : "No stack trace"
+    );
 
     // If there's an error and a file was uploaded, delete it
     if (req.file) {
       const filePath = path.join(__dirname, "../uploads", req.file.filename);
       fs.unlink(filePath, (err) => {
-        if (err) console.error("Error deleting file:", err);
+        if (err) logger.error("Error deleting file:", err);
       });
     }
 
     res.status(500).json({
-      message: "Server error",
+      message: "Error creating trainer",
       error: error.message,
       details: error.stack,
     });
@@ -238,8 +244,8 @@ export const updateTrainer = async (req: Request, res: Response) => {
       trainer,
     });
   } catch (error) {
-    console.error("Update trainer error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Update trainer error:", error);
+    res.status(500).json({ message: "Error updating trainer" });
   }
 };
 
@@ -261,8 +267,8 @@ export const updateInterviewStatus = async (req: Request, res: Response) => {
       interview: trainer.interview,
     });
   } catch (error) {
-    console.error("Update interview status error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Update interview status error:", error);
+    res.status(500).json({ message: "Error updating interview status" });
   }
 };
 
@@ -278,8 +284,8 @@ export const deleteTrainer = async (req: Request, res: Response) => {
 
     res.json({ message: "Trainer deleted successfully" });
   } catch (error) {
-    console.error("Delete trainer error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Delete trainer error:", error);
+    res.status(500).json({ message: "Error deleting trainer" });
   }
 };
 
@@ -301,8 +307,8 @@ export const updateAvailability = async (req: Request, res: Response) => {
       availability: trainer.availability,
     });
   } catch (error) {
-    console.error("Update availability error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Update availability error:", error);
+    res.status(500).json({ message: "Error updating availability" });
   }
 };
 
@@ -324,43 +330,33 @@ export const updateDocuments = async (req: Request, res: Response) => {
       documents: trainer.documents,
     });
   } catch (error) {
-    console.error("Update documents error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Update documents error:", error);
+    res.status(500).json({ message: "Error updating documents" });
   }
 };
 
 // Update trainer status
 export const updateTrainerStatus = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
     const { status } = req.body;
-
-    if (!["Selected", "Rejected", "Pending"].includes(status)) {
-      return res.status(400).json({
-        message: "Invalid status. Must be one of: Selected, Rejected, Pending",
-      });
-    }
-
-    const trainer = await Trainer.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true, runValidators: true }
-    );
+    const trainer = await Trainer.findById(req.params.id);
 
     if (!trainer) {
-      return res.status(404).json({
-        message: "Trainer not found",
-      });
+      return res.status(404).json({ message: "Trainer not found" });
     }
 
-    res.status(200).json({
+    trainer.status = status;
+    await trainer.save();
+
+    res.json({
       message: "Trainer status updated successfully",
-      trainer,
+      trainer: {
+        id: trainer._id,
+        status: trainer.status,
+      },
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Error updating trainer status",
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
+    logger.error("Update trainer status error:", error);
+    res.status(500).json({ message: "Error updating trainer status" });
   }
 };

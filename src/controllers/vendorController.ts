@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Vendor } from "../models/Vendor";
 import { validationResult } from "express-validator";
+import { logger } from "../utils/logger";
 
 // Get all vendors
 export const getAllVendors = async (req: Request, res: Response) => {
@@ -8,8 +9,8 @@ export const getAllVendors = async (req: Request, res: Response) => {
     const vendors = await Vendor.find().select("-__v");
     res.json(vendors);
   } catch (error) {
-    console.error("Get vendors error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Get vendors error:", error);
+    res.status(500).json({ message: "Error getting vendors" });
   }
 };
 
@@ -24,8 +25,8 @@ export const getVendor = async (req: Request, res: Response) => {
 
     res.json(vendor);
   } catch (error) {
-    console.error("Get vendor error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Get vendor error:", error);
+    res.status(500).json({ message: "Error getting vendor" });
   }
 };
 
@@ -35,56 +36,33 @@ export const createVendor = async (req: Request, res: Response) => {
     // Validate request data
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
-        message: "Validation failed",
-        errors: errors.array(),
-      });
+      logger.log("Validation errors during vendor creation");
+      return res.status(400).json({ errors: errors.array() });
     }
 
-    // Check if vendor with same email already exists
+    // Check if vendor already exists
     const existingVendor = await Vendor.findOne({
-      email: req.body.email.toLowerCase(),
+      $or: [
+        { email: req.body.email.toLowerCase() },
+        { company: req.body.company },
+      ],
     });
     if (existingVendor) {
       return res.status(400).json({
-        message: "Vendor with this email already exists",
-        field: "email",
+        message: "Vendor with this email or company name already exists",
       });
     }
 
-    // Create vendor profile
-    const vendorData = {
-      name: req.body.name,
-      company: req.body.company,
+    // Create vendor
+    const vendor = await Vendor.create({
+      ...req.body,
       email: req.body.email.toLowerCase(),
-      phoneNo: req.body.phoneNo,
-      pastRelationship: req.body.pastRelationship,
-      link: req.body.link,
-      contactPersonPosition: req.body.contactPersonPosition,
-      status: req.body.status || "Pending",
-      trainerSupplied: req.body.trainerSupplied || [],
-      location: req.body.location,
-    };
-
-    const vendor = await Vendor.create(vendorData);
-
-    res.status(201).json({
-      message: "Vendor created successfully",
-      vendor: {
-        ...vendor.toObject(),
-        createdAt: vendor.createdAt,
-        updatedAt: vendor.updatedAt,
-      },
     });
-  } catch (error: any) {
-    console.error("Error in createVendor:", error);
-    console.error("Error stack:", error.stack);
 
-    res.status(500).json({
-      message: "Server error",
-      error: error.message,
-      details: error.stack,
-    });
+    res.status(201).json(vendor);
+  } catch (error) {
+    logger.error("Error in createVendor:", error);
+    res.status(500).json({ message: "Error creating vendor" });
   }
 };
 
@@ -127,8 +105,8 @@ export const updateVendor = async (req: Request, res: Response) => {
       vendor: updatedVendor,
     });
   } catch (error) {
-    console.error("Update vendor error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Update vendor error:", error);
+    res.status(500).json({ message: "Error updating vendor" });
   }
 };
 
@@ -143,8 +121,8 @@ export const deleteVendor = async (req: Request, res: Response) => {
     await Vendor.findByIdAndDelete(req.params.id);
     res.json({ message: "Vendor deleted successfully" });
   } catch (error) {
-    console.error("Delete vendor error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Delete vendor error:", error);
+    res.status(500).json({ message: "Error deleting vendor" });
   }
 };
 
@@ -166,7 +144,7 @@ export const updateVendorStatus = async (req: Request, res: Response) => {
       vendor,
     });
   } catch (error) {
-    console.error("Update vendor status error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Update vendor status error:", error);
+    res.status(500).json({ message: "Error updating vendor status" });
   }
 };

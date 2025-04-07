@@ -8,7 +8,7 @@ import {
   deleteVendor,
   updateVendorStatus,
 } from "../controllers/vendorController";
-import { auth, authorize } from "../middleware/auth";
+import { authenticate as auth, authorize } from "../middleware/auth";
 
 const router = express.Router();
 
@@ -52,14 +52,14 @@ router.post(
 );
 
 // Protected routes (require authentication)
-router.put("/:id", auth, authorize("admin"), vendorValidation, updateVendor);
-router.delete("/:id", auth, authorize("admin"), deleteVendor);
+router.put("/:id", auth, authorize(["admin"]), vendorValidation, updateVendor);
+router.delete("/:id", auth, authorize(["admin"]), deleteVendor);
 
 // Update vendor status route
 router.patch(
   "/:id/status",
   auth,
-  authorize("admin"),
+  authorize(["admin"]),
   body("status").notEmpty().withMessage("Status is required").isString(),
   updateVendorStatus
 );

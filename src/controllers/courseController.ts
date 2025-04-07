@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { Course } from "../models/Course";
 import { Trainer } from "../models/Trainer";
 import { validationResult } from "express-validator";
+import { logger } from "../utils/logger";
 
 // Get all courses
 export const getAllCourses = async (req: Request, res: Response) => {
@@ -13,8 +14,8 @@ export const getAllCourses = async (req: Request, res: Response) => {
 
     res.json(courses);
   } catch (error) {
-    console.error("Get courses error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Get courses error:", error);
+    res.status(500).json({ message: "Error getting courses" });
   }
 };
 
@@ -32,8 +33,8 @@ export const getCourse = async (req: Request, res: Response) => {
 
     res.json(course);
   } catch (error) {
-    console.error("Get course error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Get course error:", error);
+    res.status(500).json({ message: "Error getting course" });
   }
 };
 
@@ -81,8 +82,8 @@ export const createCourse = async (req: Request, res: Response) => {
 
     res.status(201).json(course);
   } catch (error) {
-    console.error("Create course error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Create course error:", error);
+    res.status(500).json({ message: "Error creating course" });
   }
 };
 
@@ -131,8 +132,8 @@ export const updateCourse = async (req: Request, res: Response) => {
       course,
     });
   } catch (error) {
-    console.error("Update course error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Update course error:", error);
+    res.status(500).json({ message: "Error updating course" });
   }
 };
 
@@ -148,8 +149,8 @@ export const deleteCourse = async (req: Request, res: Response) => {
 
     res.json({ message: "Course deleted successfully" });
   } catch (error) {
-    console.error("Delete course error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Delete course error:", error);
+    res.status(500).json({ message: "Error deleting course" });
   }
 };
 
@@ -171,8 +172,8 @@ export const updateMaterials = async (req: Request, res: Response) => {
       materials: course.materials,
     });
   } catch (error) {
-    console.error("Update materials error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Update materials error:", error);
+    res.status(500).json({ message: "Error updating materials" });
   }
 };
 
@@ -194,7 +195,7 @@ export const updateSchedule = async (req: Request, res: Response) => {
       schedule: course.schedule,
     });
   } catch (error) {
-    console.error("Update schedule error:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Update schedule error:", error);
+    res.status(500).json({ message: "Error updating schedule" });
   }
 };

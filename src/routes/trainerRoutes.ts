@@ -13,7 +13,7 @@ import {
   updateInterviewStatus,
   updateTrainerStatus,
 } from "../controllers/trainerController";
-import { auth, authorize } from "../middleware/auth";
+import { authenticate as auth, authorize } from "../middleware/auth";
 
 const router = express.Router();
 
@@ -102,7 +102,7 @@ router.get("/:id", getTrainer);
 router.put(
   "/:id/interview",
   auth,
-  authorize("admin"),
+  authorize(["admin"]),
   body("interview").isIn(["Taken", "Not taken"]),
   updateInterviewStatus
 );
@@ -124,21 +124,22 @@ router.post("/", upload.single("resume"), async (req, res, next) => {
 router.put(
   "/:id",
   auth,
-  authorize("admin", "trainer"),
+  authorize(["admin", "trainer"]),
   trainerValidation,
   updateTrainer
 );
-router.delete("/:id", auth, authorize("admin"), deleteTrainer);
+router.delete("/:id", auth, authorize(["admin"]), deleteTrainer);
 router.put(
   "/:id/availability",
   auth,
-  authorize("admin", "trainer"),
+  authorize(["admin", "trainer"]),
+  availabilityValidation,
   updateAvailability
 );
 router.put(
   "/:id/documents",
   auth,
-  authorize("admin", "trainer"),
+  authorize(["admin", "trainer"]),
   upload.array("document", 5),
   updateDocuments
 );
@@ -147,7 +148,7 @@ router.put(
 router.patch(
   "/:id/status",
   auth,
-  authorize("admin"),
+  authorize(["admin"]),
   body("status")
     .isIn(["Selected", "Rejected", "Pending"])
     .withMessage("Invalid status"),

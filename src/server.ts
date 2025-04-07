@@ -8,12 +8,14 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import path from "path";
 import fs from "fs";
+import { logger } from "./utils/logger";
 
 // Import routes
-import authRoutes from "./routes/authRoutes";
+import authRoutes from "./routes/auth";
 import trainerRoutes from "./routes/trainerRoutes";
 import courseRoutes from "./routes/courseRoutes";
 import vendorRoutes from "./routes/vendorRoutes";
+import userRoutes from "./routes/userRoutes";
 
 // Load environment variables
 dotenv.config();
@@ -37,11 +39,22 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-console.log("Running with __dirname:", __dirname);
-console.log("Running with process.argv:", process.argv);
-
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === "production"
+        ? "https://trainer-management-system-frontend.onrender.com"
+        : [
+            "http://localhost:8080",
+            "http://localhost:8081",
+            "http://localhost:8082",
+          ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(helmet());
 app.use(morgan("dev"));
 app.use(express.json());
@@ -53,18 +66,18 @@ const MONGODB_URI = process.env.MONGODB_URI as string;
 mongoose
   .connect(MONGODB_URI)
   .then(() => {
-    console.log("Connected to MongoDB");
+    logger.log("Connected to MongoDB");
   })
   .catch((error) => {
-    console.error("MongoDB connection error:", error);
+    logger.error("MongoDB connection error:", error);
   });
 
 // Socket.IO connection handling
 io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
+  logger.log("Client connected:", socket.id);
 
   socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
+    logger.log("Client disconnected:", socket.id);
   });
 });
 
@@ -73,6 +86,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/trainers", trainerRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/vendors", vendorRoutes);
+app.use("/api/users", userRoutes);
 
 // Base route
 app.get("/", (req, res) => {
@@ -87,7 +101,7 @@ app.use(
     res: express.Response,
     next: express.NextFunction
   ) => {
-    console.error(err.stack);
+    logger.error(err.stack);
     res.status(500).json({
       message: "Something went wrong!",
       error: err.message,
@@ -103,5 +117,5 @@ app.use((req: express.Request, res: express.Response) => {
 // Start server
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  logger.log(`Server is running on port ${PORT}`);
 });
