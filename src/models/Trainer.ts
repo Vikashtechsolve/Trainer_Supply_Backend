@@ -1,8 +1,8 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { IUser } from "./User";
+import { User, UserDocument } from "./User";
 
 export interface ITrainer extends Document {
-  userId: IUser["_id"];
+  userId: UserDocument["_id"];
   name: string;
   email: string;
   phoneNo: string;

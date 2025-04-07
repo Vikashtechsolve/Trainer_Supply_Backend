@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { IUser } from "./User";
+import { User, UserDocument } from "./User";
 
 export interface IVendor extends Document {
   name: string;
