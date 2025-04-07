@@ -14,14 +14,14 @@ const socket_io_1 = require("socket.io");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const logger_1 = require("./utils/logger");
+// Load environment variables
+dotenv_1.default.config();
 // Import routes
 const auth_1 = __importDefault(require("./routes/auth"));
 const trainerRoutes_1 = __importDefault(require("./routes/trainerRoutes"));
 const courseRoutes_1 = __importDefault(require("./routes/courseRoutes"));
 const vendorRoutes_1 = __importDefault(require("./routes/vendorRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
-// Load environment variables
-dotenv_1.default.config();
 // Create Express app
 const app = (0, express_1.default)();
 const httpServer = (0, http_1.createServer)(app);

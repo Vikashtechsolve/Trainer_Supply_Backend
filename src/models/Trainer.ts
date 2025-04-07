@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { User, UserDocument } from "./User";
+import { UserDocument } from "./User";
 
 export interface ITrainer extends Document {
   userId: UserDocument["_id"];

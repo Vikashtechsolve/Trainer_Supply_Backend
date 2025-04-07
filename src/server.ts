@@ -10,15 +10,15 @@ import path from "path";
 import fs from "fs";
 import { logger } from "./utils/logger";
 
+// Load environment variables
+dotenv.config();
+
 // Import routes
 import authRoutes from "./routes/auth";
 import trainerRoutes from "./routes/trainerRoutes";
 import courseRoutes from "./routes/courseRoutes";
 import vendorRoutes from "./routes/vendorRoutes";
 import userRoutes from "./routes/userRoutes";
-
-// Load environment variables
-dotenv.config();
 
 // Create Express app
 const app = express();
