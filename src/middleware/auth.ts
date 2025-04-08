@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { User } from "../models/User";
 import { logger } from "../utils/logger";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET as string;
 
 interface AuthRequest extends Request {
   user?: any;
@@ -51,7 +51,7 @@ export const authenticate = (
     }
 
     const token = parts[1];
-    const secret = process.env.JWT_SECRET || "default_jwt_secret";
+    const secret = process.env.JWT_SECRET as string;
 
     try {
       // Verify token

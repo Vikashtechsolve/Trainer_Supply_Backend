@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { rateLimit } from "express-rate-limit";
 import { logger } from "../utils/logger";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET as string;
 
 // Rate limiter for login attempts
 export const loginRateLimiter = rateLimit({
@@ -21,7 +21,7 @@ const TOKEN_EXPIRATION = "24h";
 
 // Generate JWT token
 const generateToken = (userId: string, role: string) => {
-  const secret = process.env.JWT_SECRET || "default_jwt_secret";
+  const secret = process.env.JWT_SECRET as string;
 
   return jwt.sign({ userId, role }, secret, {
     expiresIn: TOKEN_EXPIRATION,

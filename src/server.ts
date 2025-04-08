@@ -10,8 +10,10 @@ import path from "path";
 import fs from "fs";
 import { logger } from "./utils/logger";
 
-// Load environment variables
-dotenv.config();
+// Load environment variables based on NODE_ENV
+dotenv.config({
+  path: path.resolve(__dirname, `../.env.${process.env.NODE_ENV || 'development'}`)
+});
 
 // Import routes
 import authRoutes from "./routes/auth";
@@ -25,10 +27,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin:
-      process.env.NODE_ENV === "production"
-        ? "https://trainer-management-system-frontend.onrender.com"
-        : "http://localhost:3000",
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });
@@ -42,17 +41,7 @@ if (!fs.existsSync(uploadsDir)) {
 // Middleware
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? [
-            "https://trainer-supply-backend.onrender.com",
-            "https://trainer-supply-frontend.vercel.app",
-          ]
-        : [
-            "http://localhost:8080",
-            "http://localhost:8081",
-            "http://localhost:8082",
-          ],
+    origin: "*",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
