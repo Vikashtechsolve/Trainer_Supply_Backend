@@ -156,7 +156,9 @@ app.use((req: express.Request, res: express.Response) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10);
 httpServer.listen(PORT, () => {
   logger.log(`Server is running on port ${PORT}`);
+  logger.log(`Environment: ${process.env.NODE_ENV}`);
+  logger.log(`MongoDB URI: ${process.env.MONGODB_URI?.substring(0, 20)}...`);
 });
