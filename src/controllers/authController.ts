@@ -105,8 +105,10 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+    logger.log('Login attempt for email:', email);
 
     if (!email || !password) {
+      logger.error('Login failed: Missing email or password');
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -116,6 +118,7 @@ export const login = async (req: Request, res: Response) => {
     // Find user by email
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
+      logger.error('Login failed: User not found for email:', normalizedEmail);
       // Use generic error message for security
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -126,6 +129,7 @@ export const login = async (req: Request, res: Response) => {
       user.lockUntil &&
       user.lockUntil > Date.now()
     ) {
+      logger.error('Login failed: Account locked for user:', normalizedEmail);
       return res.status(401).json({
         message: "Account is temporarily locked. Please try again later.",
       });
@@ -141,10 +145,12 @@ export const login = async (req: Request, res: Response) => {
       // Lock account if too many attempts
       if (user.loginAttempts >= 5) {
         user.lockUntil = Date.now() + 15 * 60 * 1000; // 15 minutes
+        logger.error('Account locked due to too many attempts for user:', normalizedEmail);
       }
 
       await user.save();
 
+      logger.error('Login failed: Invalid password for user:', normalizedEmail);
       // Use generic error message for security
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -157,6 +163,7 @@ export const login = async (req: Request, res: Response) => {
 
     // Generate JWT
     const token = generateToken(user._id, user.role);
+    logger.log('Login successful for user:', normalizedEmail);
 
     // Send JWT token
     res.json({
@@ -171,7 +178,11 @@ export const login = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error("Login error:", error);
+    logger.error('Login error:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      body: req.body
+    });
     res.status(500).json({ message: "Error logging in" });
   }
 };

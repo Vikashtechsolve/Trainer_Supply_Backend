@@ -74,14 +74,27 @@ app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
 
 // Database connection
 const MONGODB_URI = process.env.MONGODB_URI as string;
+logger.log('Attempting to connect to MongoDB with URI:', MONGODB_URI);
 mongoose
   .connect(MONGODB_URI)
   .then(() => {
-    logger.log("Connected to MongoDB");
+    logger.log("Connected to MongoDB successfully");
   })
   .catch((error) => {
     logger.error("MongoDB connection error:", error);
+    process.exit(1); // Exit if we can't connect to MongoDB
   });
+
+// Log unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Log uncaught exceptions
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
 
 // Socket.IO connection handling
 io.on("connection", (socket) => {
@@ -112,7 +125,15 @@ app.use(
     res: express.Response,
     next: express.NextFunction
   ) => {
-    logger.error(err.stack);
+    logger.error('Error details:', {
+      error: err.message,
+      stack: err.stack,
+      path: req.path,
+      method: req.method,
+      body: req.body,
+      query: req.query,
+      params: req.params
+    });
     res.status(500).json({
       message: "Something went wrong!",
       error: err.message,
