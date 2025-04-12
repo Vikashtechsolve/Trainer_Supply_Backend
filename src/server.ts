@@ -27,9 +27,17 @@ const io = new Server(httpServer, {
   cors: {
     origin:
       process.env.NODE_ENV === "production"
-        ? "https://trainer-management-system-frontend.onrender.com"
-        : "http://localhost:3000",
-    methods: ["GET", "POST"],
+        ? [
+            "https://trainer-supply-backend.onrender.com",
+            "https://trainer-supply-frontend.vercel.app",
+          ]
+        : [
+            "http://localhost:8080",
+            "http://localhost:8081",
+            "http://localhost:8082",
+          ],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    credentials: true,
   },
 });
 
