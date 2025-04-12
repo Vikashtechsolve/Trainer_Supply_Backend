@@ -28,9 +28,17 @@ const httpServer = (0, http_1.createServer)(app);
 const io = new socket_io_1.Server(httpServer, {
     cors: {
         origin: process.env.NODE_ENV === "production"
-            ? "https://trainer-management-system-frontend.onrender.com"
-            : "http://localhost:3000",
-        methods: ["GET", "POST"],
+            ? [
+                "https://trainer-supply-backend.onrender.com",
+                "https://trainer-supply-frontend.vercel.app",
+            ]
+            : [
+                "http://localhost:8080",
+                "http://localhost:8081",
+                "http://localhost:8082",
+            ],
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        credentials: true,
     },
 });
 // Ensure uploads directory exists
@@ -61,13 +69,24 @@ app.use(express_1.default.urlencoded({ extended: true }));
 app.use("/uploads", express_1.default.static(path_1.default.join(__dirname, "../public/uploads")));
 // Database connection
 const MONGODB_URI = process.env.MONGODB_URI;
+logger_1.logger.log('Attempting to connect to MongoDB with URI:', MONGODB_URI);
 mongoose_1.default
     .connect(MONGODB_URI)
     .then(() => {
-    logger_1.logger.log("Connected to MongoDB");
+    logger_1.logger.log("Connected to MongoDB successfully");
 })
     .catch((error) => {
     logger_1.logger.error("MongoDB connection error:", error);
+    process.exit(1); // Exit if we can't connect to MongoDB
+});
+// Log unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+    logger_1.logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+// Log uncaught exceptions
+process.on('uncaughtException', (error) => {
+    logger_1.logger.error('Uncaught Exception:', error);
+    process.exit(1);
 });
 // Socket.IO connection handling
 io.on("connection", (socket) => {
@@ -88,7 +107,15 @@ app.get("/", (req, res) => {
 });
 // Error handling middleware
 app.use((err, req, res, next) => {
-    logger_1.logger.error(err.stack);
+    logger_1.logger.error('Error details:', {
+        error: err.message,
+        stack: err.stack,
+        path: req.path,
+        method: req.method,
+        body: req.body,
+        query: req.query,
+        params: req.params
+    });
     res.status(500).json({
         message: "Something went wrong!",
         error: err.message,

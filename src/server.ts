@@ -80,23 +80,36 @@ if (!fs.existsSync(uploadsDir)) {
 // Middleware
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
+    origin: function(origin, callback) {
+      const allowedOrigins = process.env.NODE_ENV === "production" 
         ? [
             "https://trainer-supply-backend.onrender.com",
-            "https://trainer-supply-frontend.vercel.app",
+            "https://trainer-supply-frontend.vercel.app"
           ]
         : [
             "http://localhost:8080",
             "http://localhost:8081",
-            "http://localhost:8082",
-          ],
+            "http://localhost:8082"
+          ];
+      
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        console.log("Blocked origin:", origin);
+        callback(null, false);
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

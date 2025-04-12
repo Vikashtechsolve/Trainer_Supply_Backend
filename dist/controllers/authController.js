@@ -29,11 +29,21 @@ exports.loginRateLimiter = (0, express_rate_limit_1.rateLimit)({
 const TOKEN_EXPIRATION = "24h";
 // Generate JWT token
 const generateToken = (userId, role) => {
-    const secret = process.env.JWT_SECRET || "default_jwt_secret";
-    return jsonwebtoken_1.default.sign({ userId, role }, secret, {
-        expiresIn: TOKEN_EXPIRATION,
-        algorithm: "HS256",
-    });
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        logger_1.logger.error('JWT_SECRET is not set in environment variables');
+        throw new Error('JWT configuration error');
+    }
+    try {
+        return jsonwebtoken_1.default.sign({ userId, role }, secret, {
+            algorithm: 'HS256',
+            expiresIn: process.env.JWT_EXPIRE || '24h'
+        });
+    }
+    catch (error) {
+        logger_1.logger.error('Error generating JWT token:', error);
+        throw new Error('Token generation failed');
+    }
 };
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -100,7 +110,9 @@ exports.register = register;
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = req.body;
+        logger_1.logger.log('Login attempt for email:', email);
         if (!email || !password) {
+            logger_1.logger.error('Login failed: Missing email or password');
             return res.status(400).json({ message: "All fields are required" });
         }
         // Normalize email to lowercase
@@ -108,6 +120,7 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         // Find user by email
         const user = yield User_1.User.findOne({ email: normalizedEmail });
         if (!user) {
+            logger_1.logger.error('Login failed: User not found for email:', normalizedEmail);
             // Use generic error message for security
             return res.status(401).json({ message: "Invalid credentials" });
         }
@@ -115,6 +128,7 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (user.loginAttempts >= 5 &&
             user.lockUntil &&
             user.lockUntil > Date.now()) {
+            logger_1.logger.error('Login failed: Account locked for user:', normalizedEmail);
             return res.status(401).json({
                 message: "Account is temporarily locked. Please try again later.",
             });
@@ -127,8 +141,10 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             // Lock account if too many attempts
             if (user.loginAttempts >= 5) {
                 user.lockUntil = Date.now() + 15 * 60 * 1000; // 15 minutes
+                logger_1.logger.error('Account locked due to too many attempts for user:', normalizedEmail);
             }
             yield user.save();
+            logger_1.logger.error('Login failed: Invalid password for user:', normalizedEmail);
             // Use generic error message for security
             return res.status(401).json({ message: "Invalid credentials" });
         }
@@ -139,6 +155,7 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         yield user.save();
         // Generate JWT
         const token = generateToken(user._id, user.role);
+        logger_1.logger.log('Login successful for user:', normalizedEmail);
         // Send JWT token
         res.json({
             message: "Login successful",
@@ -153,7 +170,11 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
-        logger_1.logger.error("Login error:", error);
+        logger_1.logger.error('Login error:', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+            body: req.body
+        });
         res.status(500).json({ message: "Error logging in" });
     }
 });
