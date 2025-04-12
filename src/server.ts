@@ -10,6 +10,15 @@ import path from "path";
 import fs from "fs";
 import { logger } from "./utils/logger";
 
+// Load environment variables based on NODE_ENV
+if (process.env.NODE_ENV === 'production') {
+  dotenv.config({ path: '.env.production' });
+} else {
+  dotenv.config();
+}
+
+logger.log(`Starting server in ${process.env.NODE_ENV} mode`);
+
 // Load environment variables
 dotenv.config();
 
