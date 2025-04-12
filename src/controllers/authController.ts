@@ -21,12 +21,25 @@ const TOKEN_EXPIRATION = "24h";
 
 // Generate JWT token
 const generateToken = (userId: string, role: string) => {
-  const secret = process.env.JWT_SECRET || "default_jwt_secret";
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    logger.error('JWT_SECRET is not set in environment variables');
+    throw new Error('JWT configuration error');
+  }
 
-  return jwt.sign({ userId, role }, secret, {
-    expiresIn: TOKEN_EXPIRATION,
-    algorithm: "HS256",
-  });
+  try {
+    return jwt.sign(
+      { userId, role },
+      secret,
+      {
+        algorithm: 'HS256',
+        expiresIn: process.env.JWT_EXPIRE || '24h'
+      } as jwt.SignOptions
+    );
+  } catch (error) {
+    logger.error('Error generating JWT token:', error);
+    throw new Error('Token generation failed');
+  }
 };
 
 export const register = async (req: Request, res: Response) => {
