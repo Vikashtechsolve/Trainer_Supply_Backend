@@ -1,29 +1,19 @@
-const isDevelopment = process.env.NODE_ENV !== "production";
-
 export const logger = {
   log: (...args: unknown[]) => {
-    if (isDevelopment) {
-      console.log(...args);
-    }
+    console.log(new Date().toISOString(), ...args);
   },
   error: (...args: unknown[]) => {
-    if (isDevelopment) {
-      console.error(...args);
-    }
+    console.error(new Date().toISOString(), ...args);
   },
   warn: (...args: unknown[]) => {
-    if (isDevelopment) {
-      console.warn(...args);
-    }
+    console.warn(new Date().toISOString(), ...args);
   },
   info: (...args: unknown[]) => {
-    if (isDevelopment) {
-      console.info(...args);
-    }
+    console.info(new Date().toISOString(), ...args);
   },
   debug: (...args: unknown[]) => {
-    if (isDevelopment) {
-      console.debug(...args);
+    if (process.env.NODE_ENV !== "production") {
+      console.debug(new Date().toISOString(), ...args);
     }
   },
 };

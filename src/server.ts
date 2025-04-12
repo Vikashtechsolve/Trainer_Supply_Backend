@@ -19,8 +19,29 @@ if (process.env.NODE_ENV === 'production') {
 
 logger.log(`Starting server in ${process.env.NODE_ENV} mode`);
 
-// Load environment variables
-dotenv.config();
+// Load environment variables based on NODE_ENV
+try {
+  if (process.env.NODE_ENV === 'production') {
+    logger.log('Loading production environment variables...');
+    dotenv.config({ path: '.env.production' });
+  } else {
+    logger.log('Loading development environment variables...');
+    dotenv.config();
+  }
+
+  // Verify required environment variables
+  const requiredEnvVars = ['PORT', 'MONGODB_URI', 'JWT_SECRET'];
+  const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+  
+  if (missingEnvVars.length > 0) {
+    throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  }
+
+  logger.log('Environment variables loaded successfully');
+} catch (error) {
+  logger.error('Error loading environment variables:', error);
+  process.exit(1);
+}
 
 // Import routes
 import authRoutes from "./routes/auth";
@@ -156,9 +177,25 @@ app.use((req: express.Request, res: express.Response) => {
 });
 
 // Start server
-const PORT = parseInt(process.env.PORT || '5000', 10);
-httpServer.listen(PORT, () => {
-  logger.log(`Server is running on port ${PORT}`);
-  logger.log(`Environment: ${process.env.NODE_ENV}`);
-  logger.log(`MongoDB URI: ${process.env.MONGODB_URI?.substring(0, 20)}...`);
-});
+try {
+  const PORT = parseInt(process.env.PORT || '5000', 10);
+  logger.log('Attempting to start server on port:', PORT);
+  
+  httpServer.listen(PORT, () => {
+    logger.log('=== Server Configuration ===');
+    logger.log(`Port: ${PORT}`);
+    logger.log(`Environment: ${process.env.NODE_ENV}`);
+    logger.log(`MongoDB URI: ${process.env.MONGODB_URI?.substring(0, 20)}...`);
+    logger.log(`Frontend URL: ${process.env.FRONTEND_URL}`);
+    logger.log('=========================');
+  });
+
+  // Handle server errors
+  httpServer.on('error', (error: Error) => {
+    logger.error('Server error:', error);
+    process.exit(1);
+  });
+} catch (error) {
+  logger.error('Failed to start server:', error);
+  process.exit(1);
+}
